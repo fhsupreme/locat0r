@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <title>Locat0r</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/2.13.1/OpenLayers.js"></script>
+</head>
+
+<body onLoad="trackPosition()">
+    <p id="messageElement"></p>
+    <script>
+        var messageElement = document.getElementById('messageElement');
+
+        function trackPosition() {
+            if (navigator.geolocation) {
+                //here system indicates CPU, GPU, radio, wifi etc.
+                if (navigator.wakeLock) {
+                    navigator.wakeLock.request("system").then(
+                        function successFunction() {
+                            positionTimeout();
+                        },
+                        function errorFunction() {
+                            alert("Could not request system wakeLock")
+                        }
+                    );
+                } else {
+                    messageElement.innerHTML = 'wakeLock not supported';
+                }
+            } else {
+                messageElement.innerHTML = 'Ihr Browser unterstützt keine Geolocation.';
+            }
+        }
+
+        function positionTimeout() {
+            navigator.geolocation.getCurrentPosition(submitPosition, showError);
+            window.setTimeout(positionTimeout, 2500);
+        }
+
+        function submitPosition(position) {
+            var data = {
+                lo: position.coords.longitude,
+                la: position.coords.latitude
+            };
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/position", true);
+            xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+            xhr.onload = function () {
+                messageElement.innerHTML = xhr.response;
+            };
+            xhr.send(JSON.stringify(data));
+        }
+
+        function showError(error) {
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    messageElement.innerHTML = "Benutzer lehnte Standortabfrage ab."
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    messageElement.innerHTML = "Standortdaten sind nicht verfügbar."
+                    break;
+                case error.TIMEOUT:
+                    messageElement.innerHTML = "Die Standortabfrage dauerte zu lange (Time-out)."
+                    break;
+                case error.UNKNOWN_ERROR:
+                    messageElement.innerHTML = "unbekannter Fehler."
+                    break;
+            }
+        }
+    </script>
+</body>
+
+</html>
