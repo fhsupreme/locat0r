@@ -4,68 +4,47 @@
 <head>
     <meta charset="utf-8">
     <title>Locat0r</title>
+    <style>
+        main {
+            display: block;
+            /* für IE */
+        }
+
+        #mapDiv {
+            width: device-width;
+            height: 800px;
+            margin: 0;
+        }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/openlayers/2.13.1/OpenLayers.js"></script>
 </head>
 
-<body onLoad="trackPosition()">
-    <p id="messageElement"></p>
+<body onLoad="displayPosition()">
+    <div id="mapDiv"></div>
     <script>
-        var messageElement = document.getElementById('messageElement');
 
-        function trackPosition() {
-            if (navigator.geolocation) {
-                //here system indicates CPU, GPU, radio, wifi etc.
-                if (navigator.wakeLock) {
-                    navigator.wakeLock.request("system").then(
-                        function successFunction() {
-                            positionTimeout();
-                        },
-                        function errorFunction() {
-                            alert("Could not request system wakeLock")
-                        }
+        function displayPosition() {
+
+            fetch("/position").then(response => response.json()).then(function (position) {
+
+                map = new OpenLayers.Map('mapDiv');
+                map.addLayer(new OpenLayers.Layer.OSM());
+
+                var lonLat = new OpenLayers.LonLat(position.lon, position.lat)
+                    .transform(
+                        new OpenLayers.Projection('EPSG:4326'),
+                        map.getProjectionObject()
                     );
-                } else {
-                    messageElement.innerHTML = 'wakeLock not supported';
-                }
-            } else {
-                messageElement.innerHTML = 'Ihr Browser unterstützt keine Geolocation.';
-            }
-        }
 
-        function positionTimeout() {
-            navigator.geolocation.getCurrentPosition(submitPosition, showError);
-            window.setTimeout(positionTimeout, 2500);
-        }
+                var zoom = 12;
 
-        function submitPosition(position) {
-            var data = {
-                lo: position.coords.longitude,
-                la: position.coords.latitude
-            };
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", "/position", true);
-            xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-            xhr.onload = function () {
-                messageElement.innerHTML = xhr.response;
-            };
-            xhr.send(JSON.stringify(data));
-        }
+                var markers = new OpenLayers.Layer.Markers('Markers');
+                map.addLayer(markers);
 
-        function showError(error) {
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    messageElement.innerHTML = "Benutzer lehnte Standortabfrage ab."
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    messageElement.innerHTML = "Standortdaten sind nicht verfügbar."
-                    break;
-                case error.TIMEOUT:
-                    messageElement.innerHTML = "Die Standortabfrage dauerte zu lange (Time-out)."
-                    break;
-                case error.UNKNOWN_ERROR:
-                    messageElement.innerHTML = "unbekannter Fehler."
-                    break;
-            }
+                markers.addMarker(new OpenLayers.Marker(lonLat));
+
+                map.setCenter(lonLat, zoom);
+            });
         }
     </script>
 </body>
