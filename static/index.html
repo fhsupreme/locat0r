@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Locat0r</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="/bootstrap.min.css" type="text/css">
+    <link rel="stylesheet" href="/ol.css" type="text/css">
+
+    <script src="/ol.js"></script>
+
+    <style>
+        #map {
+            height: 80vh;
+            width: 80vw;
+            display: block;
+        }
+
+        .margin-1 {
+            margin-top: 1em;
+        }
+    </style>
+
+    <script>
+
+        var map, track, position;
+        function initMap() {
+            map = new ol.Map({
+                target: 'map',
+                layers: [
+                    new ol.layer.Tile({
+                        source: new ol.source.OSM()
+                    })
+                ],
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([11, 48]),
+                    zoom: 5
+                })
+            });
+        }
+
+        function loadPosition() {
+
+            track = new ol.layer.Vector({
+                map: map,
+                source: new ol.source.Vector({
+                    url: '/track',
+                    format: new ol.format.GPX()
+                })
+            });
+
+            fetch("/position").then(response => response.json()).then(function (position) {
+                var pos = ol.proj.fromLonLat([position.lon, position.lat]);
+
+                var positionFeature = new ol.Feature();
+                positionFeature.setStyle(new ol.style.Style({
+                    image: new ol.style.Circle({
+                        radius: 6,
+                        fill: new ol.style.Fill({
+                            color: '#3399CC'
+                        }),
+                        stroke: new ol.style.Stroke({
+                            color: '#fff',
+                            width: 2
+                        })
+                    }),
+                    text: new ol.style.Text({
+                        font: '12px Calibri,sans-serif',
+                        fill: new ol.style.Fill({ color: '#000' }),
+                        stroke: new ol.style.Stroke({
+                            color: '#fff',
+                            width: 2
+                        }),
+                        text: '\n\n' + position.time
+                    })
+                }));
+                positionFeature.setGeometry(new ol.geom.Point(pos));
+
+                position = new ol.layer.Vector({
+                    map: map,
+                    source: new ol.source.Vector({
+                        features: [positionFeature]
+                    })
+                });
+
+                map.getView().setCenter(pos);
+                map.getView().setZoom(12);
+            });
+
+        }
+
+    </script>
+</head>
+
+<body onload="initMap()">
+    <div class="container">
+        <div class="row margin-1">
+            <div class="col-2">
+                <input type="button" value="Load Position" onclick="loadPosition()">
+            </div>
+            <div class="col-10">
+            </div>
+        </div>
+        <div class="row margin-1">
+            <div class="col-12">
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+    <div style="display: none;">
+        <div id="marker" title="Marker"></div>
+    </div>
+
+</body>
+
+</html>
