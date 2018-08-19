@@ -1,0 +1,21 @@
+version: '3.1'
+
+services:
+
+  influxdb:
+    image: influxdb
+    restart: always
+    ports:
+      - 8086:8086
+    environment:
+      INFLUXDB_DB: locat0r
+      INFLUXDB_ADMIN_USER: root
+      INFLUXDB_ADMIN_PASSWORD: geheim
+
+  chronograf:
+    image: chronograf
+    restart: always
+    ports:
+      - 8888:8888
+    links:
+      - influxdb
