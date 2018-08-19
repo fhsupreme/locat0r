@@ -20,7 +20,7 @@ import (
 var healthTmpl = template.New("health")
 
 const (
-	addr   = "http://localhost:8086"
+	addr   = "http://influxdb:8086"
 	db     = "locat0r"
 	user   = "admin"
 	passwd = "geheim"
@@ -81,7 +81,7 @@ func health(c echo.Context) error {
 func getPosition(c echo.Context) error {
 
 	waypoints := queryWaypoints(1)
-	position := position{Lon: waypoints[0].Lon, Lat: waypoints[0].Lat, Time: time.Now()}
+	position := position{Lon: waypoints[0].Lon, Lat: waypoints[0].Lat, Time: waypoints[0].Time}
 
 	jsonPos, err := json.Marshal(position)
 	if err != nil {
@@ -94,26 +94,6 @@ func getPosition(c echo.Context) error {
 func getTrack(c echo.Context) error {
 
 	waypoints := queryWaypoints(100)
-
-	/*
-		var waypoints []*gpx.WptType
-
-		waypoints = append(waypoints, &gpx.WptType{
-			Lat: 48.6855344, Lon: 11.2511425,
-		})
-		waypoints = append(waypoints, &gpx.WptType{
-			Lat: 48.6844522, Lon: 11.2312325,
-		})
-		waypoints = append(waypoints, &gpx.WptType{
-			Lat: 48.6833643, Lon: 11.2213225,
-		})
-		waypoints = append(waypoints, &gpx.WptType{
-			Lat: 48.6821744, Lon: 11.2714125,
-		})
-		waypoints = append(waypoints, &gpx.WptType{
-			Lat: 48.6810944, Lon: 11.2914025,
-		})
-	*/
 
 	g := &gpx.GPX{
 		Version: "1.0",
@@ -223,11 +203,11 @@ func queryWaypoints(n int) []*gpx.WptType {
 	var waypoints []*gpx.WptType
 
 	for _, r := range res.Results[0].Series[0].Values {
-		// time := r[0].(time.Time)
+		time, _ := time.Parse(time.RFC3339, r[0].(string))
 		lat, _ := r[1].(json.Number).Float64()
 		lon, _ := r[2].(json.Number).Float64()
 		waypoints = append(waypoints, &gpx.WptType{
-			Lat: lat, Lon: lon})
+			Lat: lat, Lon: lon, Time: time})
 		// log.Printf("i: %v, time: %v, lat: %v, lon: %v", i, r[0], r[1], r[2])
 	}
 

@@ -1,0 +1,33 @@
+version: '3.1'
+
+services:
+
+  influxdb:
+    image: influxdb
+    restart: always
+    ports:
+      - 8086:8086
+    environment:
+      INFLUXDB_DB: locat0r
+      INFLUXDB_ADMIN_USER: root
+      INFLUXDB_ADMIN_PASSWORD: geheim
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  locator:
+    image: locator
+    restart: always
+    ports:
+      - 8023:8023
+    links:
+      - influxdb
+    depends_on:
+      - influxdb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8023/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
